@@ -16,105 +16,175 @@ function ShieldAlertIcon(props: { className?: string }) {
   );
 }
 
+const DEMO_PROPERTIES = [
+  { label: '125 Ocean Drive',     sublabel: 'Miami Beach, FL',   address: '125 Ocean Drive, Miami FL 33139' },
+  { label: '1000 Brickell Ave',   sublabel: 'Miami, FL',         address: '1000 Brickell Ave, Miami FL 33131' },
+  { label: '8800 SW 232nd St',    sublabel: 'South Miami, FL',   address: '8800 SW 232nd St, Miami FL 33190' },
+  { label: '16001 Collins Ave',   sublabel: 'Sunny Isles, FL',   address: '16001 Collins Ave, Sunny Isles FL 33160' },
+  { label: '3 Island Ave',        sublabel: 'Miami Beach, FL',   address: '3 Island Ave, Miami Beach FL 33139' },
+];
+
 function App() {
-  const [activeAddress, setActiveAddress] = useState("125 Ocean Drive, Miami FL 33139");
+  const [inputValue, setInputValue] = useState('');
+  const [activeAddress, setActiveAddress] = useState('');
   const [riskData, setRiskData] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<any>(null);
   const [trajectoryData, setTrajectoryData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  
-  // Time slider state 2024 to 2044
+  const [loading, setLoading] = useState(false);
   const [year, setYear] = useState(2024);
 
   useEffect(() => {
+    if (!activeAddress) return;
     async function fetchData() {
       setLoading(true);
+      setRiskData(null);
+      setRecommendations(null);
+      setTrajectoryData(null);
       try {
         const [riskRes, recRes, trajRes] = await Promise.all([
           axios.get(`http://localhost:8000/risk?address=${encodeURIComponent(activeAddress)}`),
-          axios.get(`http://localhost:8000/risk/recommendations?address=${encodeURIComponent(activeAddress)}`),
+          axios.get(`http://localhost:8000/recommendations?address=${encodeURIComponent(activeAddress)}`),
           axios.get(`http://localhost:8000/trajectory?address=${encodeURIComponent(activeAddress)}`)
         ]);
         setRiskData(riskRes.data);
         setRecommendations(recRes.data);
         setTrajectoryData(trajRes.data);
       } catch (e) {
-        console.error("Failed to fetch API data", e);
+        console.error('Failed to fetch API data', e);
       }
       setLoading(false);
     }
     fetchData();
   }, [activeAddress]);
 
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (inputValue.trim()) {
+      setActiveAddress(inputValue.trim());
+    }
+  }
+
+  function selectDemo(address: string) {
+    setInputValue(address);
+    setActiveAddress(address);
+  }
+
   return (
     <div className="w-full h-screen relative bg-climate-bg overflow-hidden flex">
       {/* Background Map */}
       <div className="absolute inset-0 z-0">
-         <MapView riskData={riskData} year={year} />
+        <MapView riskData={riskData} year={year} />
       </div>
 
-      {/* Header Overlay */}
-      <div className="absolute top-0 left-0 right-0 p-4 z-10 pointer-events-none flex justify-between items-start">
-        <div className="flex items-center gap-3 glass-panel px-5 py-3 pointer-events-auto">
-          <ShieldAlert className="text-climate-cyan drop-shadow-[0_0_8px_rgba(0,212,255,0.8)]" />
+      {/* Header */}
+      <div className="absolute top-0 left-0 right-0 p-4 z-10 pointer-events-none flex justify-between items-start gap-4">
+        {/* Logo */}
+        <div className="flex items-center gap-3 glass-panel px-5 py-3 pointer-events-auto shrink-0">
+          <ShieldAlertIcon className="text-climate-cyan drop-shadow-[0_0_8px_rgba(0,212,255,0.8)]" />
           <h1 className="text-xl font-bold tracking-wider text-white">CLIMATE<span className="text-climate-cyan font-light">GUARD</span></h1>
         </div>
 
-        {/* Time Travel Slider positioned Top Center */}
-        <div className="glass-panel px-6 py-3 pointer-events-auto w-[400px] flex flex-col gap-2">
+        {/* Address Search */}
+        <form
+          onSubmit={handleSubmit}
+          className="glass-panel px-4 py-3 pointer-events-auto flex items-center gap-3 flex-1 max-w-[480px]"
+        >
+          <span className="text-gray-400 text-base">📍</span>
+          <input
+            type="text"
+            value={inputValue}
+            onChange={e => setInputValue(e.target.value)}
+            placeholder="Enter a US property address..."
+            className="bg-transparent text-white text-sm outline-none flex-1 placeholder-gray-500"
+          />
+          <button
+            type="submit"
+            className="text-climate-cyan font-bold text-sm hover:text-white transition px-2"
+          >
+            Analyze →
+          </button>
+        </form>
+
+        {/* Time Slider — only shown when data is loaded */}
+        {riskData && (
+          <div className="glass-panel px-6 py-3 pointer-events-auto w-[360px] flex flex-col gap-2 shrink-0">
             <div className="flex justify-between text-xs text-climate-cyan font-semibold uppercase tracking-widest">
-                <span>Current Risk</span>
-                <span>Projected ({year})</span>
+              <span>Current Risk</span>
+              <span>Projected ({year})</span>
             </div>
-            <input 
-              type="range" 
-              min="2024" max="2044" 
+            <input
+              type="range"
+              min="2024" max="2044"
               value={year}
-              onChange={(e) => setYear(parseInt(e.target.value))}
+              onChange={e => setYear(parseInt(e.target.value))}
               className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-climate-cyan"
             />
             <div className="flex justify-between text-[10px] text-gray-400">
-                <span>2024</span>
-                <span>2034</span>
-                <span>2044</span>
+              <span>2024</span>
+              <span>2034</span>
+              <span>2044</span>
             </div>
-        </div>
-        
-        <div className="w-[150px]"></div> {/* Spacer */}
+          </div>
+        )}
       </div>
 
-      {/* Layout Content */}
+      {/* Sidebars */}
       <div className="relative z-10 w-full h-full p-6 pt-24 pb-6 flex justify-between pointer-events-none gap-6">
-        
-        {/* Left Sidebar: Property Profile */}
+
+        {/* Left: Property Profile */}
         <div className="w-[400px] h-full flex flex-col gap-4 pointer-events-auto overflow-y-auto pr-2 pb-10">
-          {!loading && riskData && trajectoryData ? (
+          {!activeAddress ? (
+            <div className="glass-panel p-5 flex flex-col gap-3">
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest">Demo Properties — Miami-Dade</p>
+              {DEMO_PROPERTIES.map(p => (
+                <button
+                  key={p.address}
+                  onClick={() => selectDemo(p.address)}
+                  className="w-full text-left bg-white/5 hover:bg-white/10 border border-white/10 hover:border-climate-cyan/40 rounded-lg px-4 py-3 transition-all group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-white group-hover:text-climate-cyan transition-colors">{p.label}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{p.sublabel}</p>
+                    </div>
+                    <span className="text-climate-cyan opacity-0 group-hover:opacity-100 transition-opacity text-sm">→</span>
+                  </div>
+                </button>
+              ))}
+              <p className="text-[10px] text-gray-600 text-center pt-1">or type any US address above</p>
+            </div>
+          ) : loading ? (
+            <div className="glass-panel w-full h-64 flex items-center justify-center animate-pulse">
+              <span className="text-climate-cyan">Loading risk profile...</span>
+            </div>
+          ) : riskData && trajectoryData ? (
             <>
               <PropertyPanel data={riskData} year={year} />
               <PremiumTrajectory data={trajectoryData} currentYear={year} />
             </>
-          ) : (
-             <div className="glass-panel w-full h-64 flex items-center justify-center animate-pulse">
-                <span className="text-climate-cyan">Loading risk profile...</span>
-             </div>
-          )}
+          ) : null}
         </div>
 
-        {/* Right Sidebar: Interventions */}
+        {/* Right: Interventions */}
         <div className="w-[480px] h-full flex flex-col gap-4 pointer-events-auto overflow-y-auto pr-2 pb-10">
-          {!loading && recommendations ? (
+          {!activeAddress ? (
+            <div className="glass-panel p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[220px]">
+              <span className="text-4xl">🛠️</span>
+              <p className="text-sm text-gray-400 leading-relaxed">AI-powered mitigation recommendations<br/>and insurer matching will appear here</p>
+            </div>
+          ) : loading ? (
+            <div className="glass-panel w-full h-64 flex items-center justify-center animate-pulse">
+              <span className="text-climate-cyan">Synthesizing recommendations...</span>
+            </div>
+          ) : recommendations ? (
             <>
-              <ActionableImprovements 
-                summary={recommendations.summary} 
-                improvements={recommendations.improvements} 
+              <ActionableImprovements
+                summary={recommendations.summary}
+                improvements={recommendations.improvements}
               />
               <InsuranceList insurers={recommendations.insurers} />
             </>
-          ) : (
-             <div className="glass-panel w-full h-64 flex items-center justify-center animate-pulse">
-                <span className="text-climate-cyan">Synthesizing recommendations...</span>
-             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

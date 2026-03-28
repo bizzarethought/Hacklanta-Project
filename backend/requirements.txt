@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-geopy
-httpx
-sqlalchemy
-psycopg2-binary
-geoalchemy2
-pydantic
-python-dotenv
