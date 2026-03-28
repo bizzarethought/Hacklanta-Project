@@ -5,6 +5,10 @@ import PropertyPanel from './components/PropertyPanel';
 import ActionableImprovements from './components/ActionableImprovements';
 import PremiumTrajectory from './components/PremiumTrajectory';
 import InsuranceList from './components/InsuranceList';
+import LandingPage from './components/LandingPage';
+import LoadingTransition from './components/LoadingTransition';
+
+type AppPhase = 'landing' | 'loading' | 'app';
 
 const DEMO_PROPERTIES = [
   { label: '125 Ocean Drive',     sublabel: 'Miami Beach, FL',   address: '125 Ocean Drive, Miami FL 33139' },
@@ -39,6 +43,7 @@ function SkeletonPanel({ lines = 6 }: { lines?: number }) {
 }
 
 function App() {
+  const [appPhase, setAppPhase] = useState<AppPhase>('landing');
   const [inputValue, setInputValue] = useState('');
   const [activeAddress, setActiveAddress] = useState('');
   const [riskData, setRiskData] = useState<any>(null);
@@ -114,6 +119,16 @@ function App() {
     }
   }
 
+  // --- Phase gates ---
+  if (appPhase === 'landing') {
+    return <LandingPage onEnter={() => setAppPhase('loading')} />;
+  }
+
+  if (appPhase === 'loading') {
+    return <LoadingTransition onComplete={() => setAppPhase('app')} />;
+  }
+
+  // --- Main app (phase === 'app') ---
   return (
     <div className="w-full h-screen relative bg-climate-bg overflow-hidden flex">
       {/* Background Map */}
