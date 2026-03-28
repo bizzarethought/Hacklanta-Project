@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-climate-bg text-gray-100 overflow-hidden font-sans;
+    margin: 0;
+  }
+}
+
+.glass-panel {
+  @apply bg-climate-panel backdrop-blur-md border border-climate-border rounded-xl shadow-2xl;
+}
+
+.glass-pill {
+  @apply bg-white/5 border border-white/10 rounded-full backdrop-blur-sm;
+}
+
+/* Maplibre explicit override to hide attribution logo covering UI */
+.maplibregl-control-container {
+    display: none !important;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
