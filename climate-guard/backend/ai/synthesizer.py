@@ -4,6 +4,7 @@ from backend.models.risk import RiskProfile
 from backend.models.recommendations import Recommendations, Improvement, Insurer
 from backend.cache.store import get_cached, set_cached
 from backend.config import settings
+from backend.risk.insurer_db import get_matched_insurers
 
 SYSTEM_PROMPT = """
 You are Climate Guard's property risk advisor. You receive a structured JSON risk profile
@@ -74,29 +75,6 @@ _IMPROVEMENTS: dict[str, list[dict]] = {
     ],
 }
 
-_INSURERS: dict[str, list[dict]] = {
-    "FL": [
-        {"name": "Citizens Property Insurance",      "coverage_type": "Wind + Flood",  "notes": "Florida state insurer of last resort (FAIR Plan). Enrollment surging in coastal counties."},
-        {"name": "Universal Property & Casualty",    "coverage_type": "Full HO-3",     "notes": "Active in FL. Competitive rates for fortified homes with wind mitigation credits."},
-        {"name": "Tower Hill Insurance",             "coverage_type": "Full HO-3",     "notes": "FL-focused carrier. Discounts for impact windows, fortified roofs, and wind mitigation reports."},
-        {"name": "Security First Financial",         "coverage_type": "Full HO-3",     "notes": "FL specialist. Offers new-construction discounts and strong claims service ratings."},
-    ],
-    "CA": [
-        {"name": "California FAIR Plan",             "coverage_type": "Fire + Structure", "notes": "CA insurer of last resort. Required if private market declines. Fire coverage only — supplement with DIC policy."},
-        {"name": "Farmers Insurance",                "coverage_type": "Full HO-3",     "notes": "Active in CA. Wildfire mitigation discounts for Class A roofs and ember-resistant vents."},
-        {"name": "CSAA Insurance (AAA)",             "coverage_type": "Full HO-3",     "notes": "CA-focused. Strong wildfire claims history. Offers defensible space discounts."},
-    ],
-    "TX": [
-        {"name": "Texas FAIR Plan (TWIA)",           "coverage_type": "Wind + Hail",   "notes": "TX windstorm insurer of last resort for coastal counties. Required supplement for Gulf Coast properties."},
-        {"name": "State Farm",                       "coverage_type": "Full HO-3",     "notes": "Large TX presence. Offers wind mitigation discounts. May require separate flood policy via NFIP."},
-        {"name": "Allstate",                         "coverage_type": "Full HO-3",     "notes": "Active in TX. Bundles available with NFIP flood. Competitive for inland properties."},
-    ],
-    "DEFAULT": [
-        {"name": "State Farm",                       "coverage_type": "Full HO-3",     "notes": "Largest US home insurer. Available in most states. Offers standard mitigation discounts."},
-        {"name": "Allstate",                         "coverage_type": "Full HO-3",     "notes": "Nationwide coverage. Competitive for moderate-risk properties. Bundles available."},
-        {"name": "USAA",                             "coverage_type": "Full HO-3",     "notes": "Military families only. Highest customer satisfaction ratings. Competitive in all risk tiers."},
-    ],
-}
 
 def _contextual_fallback(profile: RiskProfile) -> dict:
     """Generate property-specific recommendations from actual hazard scores — no AI key needed."""
@@ -135,17 +113,17 @@ def _contextual_fallback(profile: RiskProfile) -> dict:
         f"annual insurance costs and preserving long-term insurability."
     )
 
-    # State-matched insurers, prioritising FAIR Plan if stressed
-    insurer_pool = _INSURERS.get(profile.state, _INSURERS["DEFAULT"])
-    if profile.fair_plan_stress:
-        fair = [i for i in insurer_pool if "FAIR" in i["name"] or "Citizens" in i["name"] or "TWIA" in i["name"]]
-        others = [i for i in insurer_pool if i not in fair]
-        insurer_pool = fair + others
+    # Use the new insurer database for state-matched recommendations
+    matched = get_matched_insurers(profile, count=3)
+    insurers = [
+        {"name": m["name"], "coverage_type": m["coverage_type"], "notes": m["notes"]}
+        for m in matched
+    ]
 
     return {
         "summary": summary,
         "improvements": improvements[:3],
-        "insurers": insurer_pool[:3],
+        "insurers": insurers,
     }
 
 

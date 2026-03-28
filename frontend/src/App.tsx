@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import MapView from './components/Map';
 import PropertyPanel from './components/PropertyPanel';
@@ -32,6 +32,16 @@ function App() {
   const [trajectoryData, setTrajectoryData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [year, setYear] = useState(2024);
+  const [overrides, setOverrides] = useState<Record<string, any>>({});
+
+  const buildQueryParams = useCallback((address: string, extraOverrides?: Record<string, any>) => {
+    const params: Record<string, string> = { address };
+    const merged = { ...overrides, ...extraOverrides };
+    if (merged.insured_value) params.insured_value = String(merged.insured_value);
+    if (merged.user_premium) params.user_premium = String(merged.user_premium);
+    if (merged.building_type) params.building_type = merged.building_type;
+    return new URLSearchParams(params).toString();
+  }, [overrides]);
 
   useEffect(() => {
     if (!activeAddress) return;
@@ -41,10 +51,11 @@ function App() {
       setRecommendations(null);
       setTrajectoryData(null);
       try {
+        const qs = buildQueryParams(activeAddress);
         const [riskRes, recRes, trajRes] = await Promise.all([
-          axios.get(`http://localhost:8000/risk?address=${encodeURIComponent(activeAddress)}`),
-          axios.get(`http://localhost:8000/recommendations?address=${encodeURIComponent(activeAddress)}`),
-          axios.get(`http://localhost:8000/trajectory?address=${encodeURIComponent(activeAddress)}`)
+          axios.get(`http://localhost:8000/risk?${qs}`),
+          axios.get(`http://localhost:8000/recommendations?${qs}`),
+          axios.get(`http://localhost:8000/trajectory?${qs}`)
         ]);
         setRiskData(riskRes.data);
         setRecommendations(recRes.data);
@@ -55,18 +66,39 @@ function App() {
       setLoading(false);
     }
     fetchData();
-  }, [activeAddress]);
+  }, [activeAddress, buildQueryParams]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (inputValue.trim()) {
+      setOverrides({});
       setActiveAddress(inputValue.trim());
     }
   }
 
   function selectDemo(address: string) {
     setInputValue(address);
+    setOverrides({});
     setActiveAddress(address);
+  }
+
+  function handleOverride(field: string, value: any) {
+    const newOverrides = { ...overrides, [field]: value };
+    setOverrides(newOverrides);
+    // Re-fetch with the override
+    if (activeAddress) {
+      const qs = buildQueryParams(activeAddress, newOverrides);
+      setLoading(true);
+      Promise.all([
+        axios.get(`http://localhost:8000/risk?${qs}`),
+        axios.get(`http://localhost:8000/recommendations?${qs}`),
+        axios.get(`http://localhost:8000/trajectory?${qs}`)
+      ]).then(([riskRes, recRes, trajRes]) => {
+        setRiskData(riskRes.data);
+        setRecommendations(recRes.data);
+        setTrajectoryData(trajRes.data);
+      }).catch(console.error).finally(() => setLoading(false));
+    }
   }
 
   return (
@@ -159,7 +191,7 @@ function App() {
             </div>
           ) : riskData && trajectoryData ? (
             <>
-              <PropertyPanel data={riskData} year={year} />
+              <PropertyPanel data={riskData} year={year} onOverride={handleOverride} />
               <PremiumTrajectory data={trajectoryData} currentYear={year} />
             </>
           ) : null}
