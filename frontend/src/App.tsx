@@ -6,16 +6,6 @@ import ActionableImprovements from './components/ActionableImprovements';
 import PremiumTrajectory from './components/PremiumTrajectory';
 import InsuranceList from './components/InsuranceList';
 
-function ShieldAlertIcon(props: { className?: string }) {
-  return (
-    <svg className={props.className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20">
-      <path d="M12 2L3 5v6c0 5.25 3.75 9.74 9 11 5.25-1.26 9-5.75 9-11V5l-9-3z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M12 8v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M12 16h.01" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 const DEMO_PROPERTIES = [
   { label: '125 Ocean Drive',     sublabel: 'Miami Beach, FL',   address: '125 Ocean Drive, Miami FL 33139' },
   { label: '1000 Brickell Ave',   sublabel: 'Miami, FL',         address: '1000 Brickell Ave, Miami FL 33131' },
@@ -23,6 +13,30 @@ const DEMO_PROPERTIES = [
   { label: '16001 Collins Ave',   sublabel: 'Sunny Isles, FL',   address: '16001 Collins Ave, Sunny Isles FL 33160' },
   { label: '3 Island Ave',        sublabel: 'Miami Beach, FL',   address: '3 Island Ave, Miami Beach FL 33139' },
 ];
+
+/* Skeleton loader that looks like the real panel */
+function SkeletonPanel({ lines = 6 }: { lines?: number }) {
+  return (
+    <div className="glass-panel p-5 flex flex-col gap-3">
+      <div className="flex items-center gap-3 mb-1">
+        <div className="w-5 h-5 rounded bg-white/[0.06] skeleton-shimmer" />
+        <div className="h-4 rounded bg-white/[0.06] skeleton-shimmer" style={{ width: '55%' }} />
+      </div>
+      <div className="h-6 rounded bg-white/[0.04] skeleton-shimmer" style={{ width: '70%' }} />
+      <div className="h-3 rounded bg-white/[0.03] skeleton-shimmer" style={{ width: '45%' }} />
+      <div className="grid grid-cols-2 gap-3 mt-2">
+        <div className="h-16 rounded-lg bg-white/[0.03] skeleton-shimmer" />
+        <div className="h-16 rounded-lg bg-white/[0.03] skeleton-shimmer" />
+      </div>
+      {Array.from({ length: lines }).map((_, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <div className="h-2 rounded-full bg-white/[0.04] flex-1 skeleton-shimmer" style={{ animationDelay: `${i * 0.08}s` }} />
+          <div className="h-2 w-8 rounded bg-white/[0.03] skeleton-shimmer" style={{ animationDelay: `${i * 0.08 + 0.04}s` }} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function App() {
   const [inputValue, setInputValue] = useState('');
@@ -85,7 +99,6 @@ function App() {
   function handleOverride(field: string, value: any) {
     const newOverrides = { ...overrides, [field]: value };
     setOverrides(newOverrides);
-    // Re-fetch with the override
     if (activeAddress) {
       const qs = buildQueryParams(activeAddress, newOverrides);
       setLoading(true);
@@ -109,11 +122,13 @@ function App() {
       </div>
 
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 p-4 z-10 pointer-events-none flex justify-between items-start gap-4">
+      <div className="absolute top-0 left-0 right-0 p-4 z-20 pointer-events-none flex justify-between items-start gap-4">
         {/* Logo */}
-        <div className="flex items-center gap-3 glass-panel px-5 py-3 pointer-events-auto shrink-0">
-          <ShieldAlertIcon className="text-climate-cyan drop-shadow-[0_0_8px_rgba(0,212,255,0.8)]" />
-          <h1 className="text-xl font-bold tracking-wider text-white">CLIMATE<span className="text-climate-cyan font-light">GUARD</span></h1>
+        <div className="flex items-center gap-2.5 glass-panel px-5 py-3 pointer-events-auto shrink-0">
+          <i className="fa-solid fa-shield-halved text-climate-cyan text-lg" style={{ filter: 'drop-shadow(0 0 6px rgba(0,212,255,0.7))' }} />
+          <h1 className="text-xl font-bold tracking-wider text-white">
+            CLIMATE<span className="text-climate-cyan font-light">GUARD</span>
+          </h1>
         </div>
 
         {/* Address Search */}
@@ -121,7 +136,7 @@ function App() {
           onSubmit={handleSubmit}
           className="glass-panel px-4 py-3 pointer-events-auto flex items-center gap-3 flex-1 max-w-[480px]"
         >
-          <span className="text-gray-400 text-base">📍</span>
+          <i className="fa-solid fa-location-dot text-gray-500 text-sm" />
           <input
             type="text"
             value={inputValue}
@@ -131,27 +146,35 @@ function App() {
           />
           <button
             type="submit"
-            className="text-climate-cyan font-bold text-sm hover:text-white transition px-2"
+            disabled={loading}
+            className="text-climate-cyan font-bold text-sm hover:text-white transition px-2 disabled:opacity-40"
           >
-            Analyze →
+            {loading ? (
+              <i className="fa-solid fa-spinner fa-spin" />
+            ) : (
+              <>Analyze <i className="fa-solid fa-arrow-right text-xs ml-1" /></>
+            )}
           </button>
         </form>
 
-        {/* Time Slider — only shown when data is loaded */}
+        {/* Time Slider */}
         {riskData && (
-          <div className="glass-panel px-6 py-3 pointer-events-auto w-[360px] flex flex-col gap-2 shrink-0">
-            <div className="flex justify-between text-xs text-climate-cyan font-semibold uppercase tracking-widest">
-              <span>Current Risk</span>
-              <span>Projected ({year})</span>
+          <div className="glass-panel px-6 py-3 pointer-events-auto w-[340px] flex flex-col gap-2 shrink-0">
+            <div className="flex justify-between text-[10px] text-gray-400 font-semibold uppercase tracking-widest">
+              <span>
+                <i className="fa-solid fa-clock text-[8px] mr-1 text-climate-cyan" />
+                Projection
+              </span>
+              <span className="text-climate-cyan font-mono">{year}</span>
             </div>
             <input
               type="range"
               min="2024" max="2044"
               value={year}
               onChange={e => setYear(parseInt(e.target.value))}
-              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-climate-cyan"
+              className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-climate-cyan"
             />
-            <div className="flex justify-between text-[10px] text-gray-400">
+            <div className="flex justify-between text-[9px] text-gray-500 font-mono">
               <span>2024</span>
               <span>2034</span>
               <span>2044</span>
@@ -160,35 +183,39 @@ function App() {
         )}
       </div>
 
-      {/* Sidebars */}
+      {/* Main content panels */}
       <div className="relative z-10 w-full h-full p-6 pt-24 pb-6 flex justify-between pointer-events-none gap-6">
 
         {/* Left: Property Profile */}
-        <div className="w-[400px] h-full flex flex-col gap-4 pointer-events-auto overflow-y-auto pr-2 pb-10">
+        <div className="w-[400px] h-full flex flex-col gap-4 pointer-events-auto overflow-y-auto pr-2 pb-10 scrollbar-thin">
           {!activeAddress ? (
             <div className="glass-panel p-5 flex flex-col gap-3">
-              <p className="text-[10px] text-gray-500 uppercase tracking-widest">Demo Properties — Miami-Dade</p>
+              <p className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold flex items-center gap-1.5">
+                <i className="fa-solid fa-map-pin text-climate-cyan text-[8px]" />
+                Demo Properties — Miami-Dade
+              </p>
               {DEMO_PROPERTIES.map(p => (
                 <button
                   key={p.address}
                   onClick={() => selectDemo(p.address)}
-                  className="w-full text-left bg-white/5 hover:bg-white/10 border border-white/10 hover:border-climate-cyan/40 rounded-lg px-4 py-3 transition-all group"
+                  className="w-full text-left bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.06] hover:border-climate-cyan/30 rounded-lg px-4 py-3 transition-all group outline-none"
                 >
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-semibold text-white group-hover:text-climate-cyan transition-colors">{p.label}</p>
                       <p className="text-xs text-gray-400 mt-0.5">{p.sublabel}</p>
                     </div>
-                    <span className="text-climate-cyan opacity-0 group-hover:opacity-100 transition-opacity text-sm">→</span>
+                    <i className="fa-solid fa-chevron-right text-[10px] text-climate-cyan opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                 </button>
               ))}
-              <p className="text-[10px] text-gray-600 text-center pt-1">or type any US address above</p>
+              <p className="text-[10px] text-gray-600 text-center pt-1">Or type any US address above</p>
             </div>
           ) : loading ? (
-            <div className="glass-panel w-full h-64 flex items-center justify-center animate-pulse">
-              <span className="text-climate-cyan">Loading risk profile...</span>
-            </div>
+            <>
+              <SkeletonPanel lines={5} />
+              <SkeletonPanel lines={4} />
+            </>
           ) : riskData && trajectoryData ? (
             <>
               <PropertyPanel data={riskData} year={year} onOverride={handleOverride} />
@@ -198,16 +225,19 @@ function App() {
         </div>
 
         {/* Right: Interventions */}
-        <div className="w-[480px] h-full flex flex-col gap-4 pointer-events-auto overflow-y-auto pr-2 pb-10">
+        <div className="w-[480px] h-full flex flex-col gap-4 pointer-events-auto overflow-y-auto pr-2 pb-10 scrollbar-thin">
           {!activeAddress ? (
-            <div className="glass-panel p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[220px]">
-              <span className="text-4xl">🛠️</span>
-              <p className="text-sm text-gray-400 leading-relaxed">AI-powered mitigation recommendations<br/>and insurer matching will appear here</p>
+            <div className="glass-panel p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[200px]">
+              <i className="fa-solid fa-wand-magic-sparkles text-3xl text-gray-600" />
+              <p className="text-sm text-gray-500 leading-relaxed">
+                AI-powered mitigation recommendations<br/>and insurer matching will appear here
+              </p>
             </div>
           ) : loading ? (
-            <div className="glass-panel w-full h-64 flex items-center justify-center animate-pulse">
-              <span className="text-climate-cyan">Synthesizing recommendations...</span>
-            </div>
+            <>
+              <SkeletonPanel lines={5} />
+              <SkeletonPanel lines={4} />
+            </>
           ) : recommendations ? (
             <>
               <ActionableImprovements
@@ -219,6 +249,18 @@ function App() {
           ) : null}
         </div>
       </div>
+
+      {/* Skeleton shimmer animation */}
+      <style>{`
+        @keyframes shimmer {
+          0% { opacity: 0.04; }
+          50% { opacity: 0.09; }
+          100% { opacity: 0.04; }
+        }
+        .skeleton-shimmer {
+          animation: shimmer 1.6s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }

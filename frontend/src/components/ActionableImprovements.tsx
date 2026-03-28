@@ -1,15 +1,15 @@
 export default function ActionableImprovements({ summary, improvements }: { summary: string, improvements: any[] }) {
-  const totalSavings = improvements.reduce((acc, curr) => acc + curr.annual_saving_usd, 0);
-  const totalCost = improvements.reduce((acc, curr) => acc + curr.cost_usd, 0);
+  const totalSavings = improvements.reduce((acc: number, curr: any) => acc + curr.annual_saving_usd, 0);
+  const totalCost = improvements.reduce((acc: number, curr: any) => acc + curr.cost_usd, 0);
 
   return (
     <div className="glass-panel p-5 flex flex-col gap-4">
-       <div className="flex items-center gap-2 text-climate-cyan mb-2 border-b border-climate-border pb-3">
-          <span className="text-xl">🛠️</span>
+       <div className="flex items-center gap-2 text-climate-cyan mb-1 border-b border-climate-border pb-3">
+          <i className="fa-solid fa-screwdriver-wrench text-sm" />
           <h2 className="text-lg font-bold">Actionable ROI Interventions</h2>
        </div>
        
-       <p className="text-[13px] leading-relaxed text-gray-300 italic mb-2 border-l-2 border-climate-cyan pl-3">
+       <p className="text-[13px] leading-relaxed text-gray-300 italic mb-1 border-l-2 border-climate-cyan pl-3">
           "{summary}"
        </p>
 
@@ -21,11 +21,12 @@ export default function ActionableImprovements({ summary, improvements }: { summ
                  <span className="text-climate-cyan font-mono font-bold text-xs bg-climate-cyan/10 px-2 py-0.5 rounded-sm">{imp.roi_pct}% ROI</span>
               </div>
               <div className="flex justify-between text-[11px] text-gray-400 font-mono">
-                 <div className="flex items-center gap-1">
-                    <span className="text-gray-400">💲</span>
+                 <div className="flex items-center gap-1.5">
+                    <i className="fa-solid fa-tag text-[9px] text-gray-500" />
                     <span>Cost: ${(imp.cost_usd).toLocaleString()}</span>
                  </div>
-                 <div className="flex items-center gap-1 text-green-400">
+                 <div className="flex items-center gap-1.5 text-green-400">
+                    <i className="fa-solid fa-arrow-down text-[9px]" />
                     <span>-${(imp.annual_saving_usd).toLocaleString()}/yr</span>
                  </div>
               </div>
@@ -33,12 +34,18 @@ export default function ActionableImprovements({ summary, improvements }: { summ
          ))}
        </div>
 
-       <div className="mt-3 pt-3 border-t border-climate-border flex justify-between items-center text-sm">
-          <span className="text-gray-400 uppercase tracking-widest text-[10px]">Total Mitigation Cost</span>
+       <div className="mt-2 pt-3 border-t border-climate-border flex justify-between items-center text-sm">
+          <span className="text-gray-400 uppercase tracking-widest text-[10px] flex items-center gap-1.5">
+            <i className="fa-solid fa-calculator text-[8px]" />
+            Total Mitigation Cost
+          </span>
           <span className="font-mono text-gray-300">${totalCost.toLocaleString()}</span>
        </div>
        <div className="flex justify-between items-center text-sm">
-          <span className="text-climate-cyan font-bold uppercase tracking-widest text-[10px]">Max Potential Savings</span>
+          <span className="text-climate-cyan font-bold uppercase tracking-widest text-[10px] flex items-center gap-1.5">
+            <i className="fa-solid fa-piggy-bank text-[9px]" />
+            Max Potential Savings
+          </span>
           <span className="font-mono text-green-400 font-bold">${totalSavings.toLocaleString()}/yr</span>
        </div>
     </div>

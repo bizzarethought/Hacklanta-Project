@@ -16,90 +16,59 @@ const US_VIEW = {
   bearing: 0,
 };
 
-// Per-hazard color palettes — each layer gets a visually distinct gradient
+// Each hazard gets a visually distinct, beautiful gradient
 const LAYER_COLORS: Record<string, any[]> = {
   flood: [
     'interpolate', ['linear'], ['heatmap-density'],
-    0,    'rgba(0,0,0,0)',
-    0.1,  'rgba(0,50,120,0.15)',
-    0.25, 'rgba(0,100,180,0.35)',
-    0.4,  'rgba(0,150,220,0.50)',
-    0.6,  'rgba(0,180,216,0.68)',
-    0.8,  'rgba(0,210,255,0.82)',
-    1,    'rgb(144,224,239)',
+    0, 'rgba(0,0,0,0)',     0.15, 'rgba(0,60,140,0.2)',
+    0.35, 'rgba(0,120,200,0.4)',  0.55, 'rgba(0,180,216,0.6)',
+    0.75, 'rgba(72,202,228,0.78)', 1, 'rgb(144,224,239)',
   ],
   fire: [
     'interpolate', ['linear'], ['heatmap-density'],
-    0,    'rgba(0,0,0,0)',
-    0.1,  'rgba(120,50,0,0.15)',
-    0.25, 'rgba(180,80,0,0.35)',
-    0.4,  'rgba(220,120,0,0.52)',
-    0.6,  'rgba(255,107,53,0.70)',
-    0.8,  'rgba(255,60,0,0.85)',
-    1,    'rgb(200,20,0)',
+    0, 'rgba(0,0,0,0)',     0.15, 'rgba(140,50,0,0.2)',
+    0.35, 'rgba(200,80,10,0.42)',  0.55, 'rgba(255,107,53,0.62)',
+    0.75, 'rgba(255,60,10,0.8)', 1, 'rgb(200,20,0)',
   ],
   wind: [
     'interpolate', ['linear'], ['heatmap-density'],
-    0,    'rgba(0,0,0,0)',
-    0.1,  'rgba(80,20,120,0.15)',
-    0.25, 'rgba(120,50,180,0.32)',
-    0.4,  'rgba(160,80,220,0.50)',
-    0.6,  'rgba(199,125,255,0.68)',
-    0.8,  'rgba(220,160,255,0.82)',
-    1,    'rgb(240,200,255)',
+    0, 'rgba(0,0,0,0)',     0.15, 'rgba(90,30,140,0.2)',
+    0.35, 'rgba(140,60,200,0.38)',  0.55, 'rgba(180,100,240,0.58)',
+    0.75, 'rgba(199,125,255,0.75)', 1, 'rgb(230,190,255)',
   ],
   heat: [
     'interpolate', ['linear'], ['heatmap-density'],
-    0,    'rgba(0,0,0,0)',
-    0.1,  'rgba(100,80,0,0.15)',
-    0.25, 'rgba(180,140,0,0.30)',
-    0.4,  'rgba(220,170,0,0.48)',
-    0.6,  'rgba(255,186,8,0.65)',
-    0.8,  'rgba(255,160,0,0.80)',
-    1,    'rgb(255,120,0)',
+    0, 'rgba(0,0,0,0)',     0.15, 'rgba(120,90,0,0.2)',
+    0.35, 'rgba(200,150,0,0.38)',  0.55, 'rgba(255,186,8,0.58)',
+    0.75, 'rgba(255,160,0,0.75)', 1, 'rgb(255,120,0)',
   ],
   seismic: [
     'interpolate', ['linear'], ['heatmap-density'],
-    0,    'rgba(0,0,0,0)',
-    0.1,  'rgba(0,60,50,0.15)',
-    0.25, 'rgba(0,120,100,0.30)',
-    0.4,  'rgba(6,180,140,0.48)',
-    0.6,  'rgba(6,214,160,0.65)',
-    0.8,  'rgba(50,240,180,0.80)',
-    1,    'rgb(120,255,210)',
+    0, 'rgba(0,0,0,0)',     0.15, 'rgba(0,80,60,0.2)',
+    0.35, 'rgba(0,140,110,0.38)',  0.55, 'rgba(6,190,150,0.58)',
+    0.75, 'rgba(6,214,160,0.75)', 1, 'rgb(120,255,210)',
   ],
   disasters: [
     'interpolate', ['linear'], ['heatmap-density'],
-    0,    'rgba(0,0,0,0)',
-    0.1,  'rgba(100,80,0,0.10)',
-    0.25, 'rgba(180,150,0,0.25)',
-    0.4,  'rgba(220,190,0,0.42)',
-    0.6,  'rgba(255,214,10,0.60)',
-    0.8,  'rgba(255,230,100,0.78)',
-    1,    'rgb(255,245,180)',
+    0, 'rgba(0,0,0,0)',     0.15, 'rgba(120,100,0,0.15)',
+    0.35, 'rgba(200,170,0,0.32)',  0.55, 'rgba(255,214,10,0.52)',
+    0.75, 'rgba(255,230,100,0.7)', 1, 'rgb(255,245,180)',
   ],
 };
 
-// Glow layers use a softer, wider version of the same palette
-const GLOW_OPACITY_BASE = 0.35;
+const ALL_LAYER_IDS = ['flood', 'fire', 'wind', 'heat', 'seismic', 'disasters'] as const;
 
-interface LayerState {
-  id: string;
-  visible: boolean;
+interface LayerVisibility {
+  [key: string]: boolean;
 }
 
 export default function MapView({ riskData, year }: { riskData: any; year: number }) {
   const mapRef = useRef<MapRef>(null);
   const [properties, setProperties] = useState<any[]>([]);
   const [layerData, setLayerData] = useState<Record<string, any>>({});
-  const [activeLayers, setActiveLayers] = useState<LayerState[]>([
-    { id: 'flood', visible: true },
-    { id: 'fire', visible: true },
-    { id: 'wind', visible: true },
-    { id: 'heat', visible: true },
-    { id: 'seismic', visible: true },
-    { id: 'disasters', visible: true },
-  ]);
+  const [visibility, setVisibility] = useState<LayerVisibility>(
+    Object.fromEntries(ALL_LAYER_IDS.map(id => [id, true]))
+  );
   const [globalOpacity, setGlobalOpacity] = useState(0.8);
 
   // Fetch properties
@@ -109,21 +78,21 @@ export default function MapView({ riskData, year }: { riskData: any; year: numbe
       .catch(console.error);
   }, []);
 
-  // Fetch per-hazard heatmap data
+  // Fetch heatmap data once on mount
   useEffect(() => {
     axios.get('http://localhost:8000/heatmap/data?layers=flood,fire,wind,heat,seismic,disasters')
       .then(res => setLayerData(res.data))
       .catch(() => {
-        // Fallback: use empty feature collections
+        // Build empty fallback so sources still exist
         const empty: Record<string, any> = {};
-        ['flood', 'fire', 'wind', 'heat', 'seismic', 'disasters'].forEach(l => {
+        ALL_LAYER_IDS.forEach(l => {
           empty[l] = { type: 'FeatureCollection', features: [] };
         });
         setLayerData(empty);
       });
   }, []);
 
-  // Fly to address when riskData loads
+  // Fly to address when we get risk data
   useEffect(() => {
     if (riskData?.lat && riskData?.lng && mapRef.current) {
       mapRef.current.flyTo({
@@ -136,53 +105,37 @@ export default function MapView({ riskData, year }: { riskData: any; year: numbe
     }
   }, [riskData]);
 
-  const toggleLayer = useCallback((layerId: string) => {
-    setActiveLayers(prev =>
-      prev.map(l => l.id === layerId ? { ...l, visible: !l.visible } : l)
-    );
+  const toggleLayer = useCallback((id: string) => {
+    setVisibility(prev => ({ ...prev, [id]: !prev[id] }));
   }, []);
 
   const setAllLayers = useCallback((visible: boolean) => {
-    setActiveLayers(prev => prev.map(l => ({ ...l, visible })));
+    setVisibility(Object.fromEntries(ALL_LAYER_IDS.map(id => [id, visible])));
   }, []);
 
-  // Time-based intensity multiplier (risk worsens over projected years)
-  const timeIntensity = 1 + ((year - 2024) / 20) * 0.6;
+  // Time factor: risk intensifies as year increases
+  const timeFactor = 1 + ((year - 2024) / 20) * 0.5;
 
-  // Inject property markers and active address into relevant layers
-  const getEnrichedGeoJSON = (layerId: string) => {
+  // Build enriched GeoJSON — adds active property to relevant layers
+  const buildGeoJSON = useCallback((layerId: string) => {
     const base = layerData[layerId] || { type: 'FeatureCollection', features: [] };
-    const extra: any[] = [];
+    if (!riskData) return base;
 
-    // Add property markers to all layers with their composite score
-    if (layerId === 'flood' || layerId === 'wind') {
-      properties.forEach(p => {
-        extra.push({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
-          properties: { weight: p.composite_score / 100 },
-        });
-      });
-    }
-
-    // Add active address point to its dominant hazard layers
-    if (riskData) {
-      const hazards = riskData.hazards || {};
-      const score = hazards[layerId]?.score || 0;
-      if (score > 0) {
-        extra.push({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [riskData.lng, riskData.lat] },
-          properties: { weight: Math.min(1, score / 10) },
-        });
-      }
-    }
+    const hazardScore = riskData.hazards?.[layerId]?.score || 0;
+    if (hazardScore <= 0) return base;
 
     return {
       ...base,
-      features: [...base.features, ...extra],
+      features: [
+        ...base.features,
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [riskData.lng, riskData.lat] },
+          properties: { weight: Math.min(1, hazardScore / 10) },
+        },
+      ],
     };
-  };
+  }, [layerData, riskData]);
 
   return (
     <Map
@@ -192,87 +145,69 @@ export default function MapView({ riskData, year }: { riskData: any; year: numbe
       mapStyle={MAP_STYLE}
       style={{ width: '100%', height: '100%' }}
     >
-      {/* Per-hazard heatmap layers with glow effect */}
-      {activeLayers.map(({ id, visible }) => {
-        if (!visible || !layerData[id]) return null;
-        const geojson = getEnrichedGeoJSON(id);
+      {/* Render all 6 heatmap layers — visibility controlled via opacity */}
+      {ALL_LAYER_IDS.map(id => {
+        const geojson = buildGeoJSON(id);
         const colors = LAYER_COLORS[id];
-        if (!colors) return null;
+        const isVisible = visibility[id];
 
         return (
-          <span key={id}>
-            {/* Glow/bloom under-layer — wider radius, lower opacity */}
-            <Source id={`glow-${id}`} type="geojson" data={geojson}>
-              <Layer
-                id={`glow-heatmap-${id}`}
-                type="heatmap"
-                paint={{
-                  'heatmap-weight': ['interpolate', ['linear'], ['get', 'weight'], 0, 0, 1, 1],
-                  'heatmap-intensity': ['interpolate', ['linear'], ['zoom'],
-                    0, 0.3 * timeIntensity, 6, 0.8 * timeIntensity, 12, 1.8 * timeIntensity, 15, 3 * timeIntensity],
-                  'heatmap-color': colors,
-                  'heatmap-radius': ['interpolate', ['linear'], ['zoom'],
-                    0, 28, 3, 48, 6, 65, 9, 85, 15, 110],
-                  'heatmap-opacity': GLOW_OPACITY_BASE * globalOpacity,
-                } as any}
-              />
-            </Source>
-
-            {/* Main sharp layer */}
-            <Source id={`main-${id}`} type="geojson" data={geojson}>
-              <Layer
-                id={`main-heatmap-${id}`}
-                type="heatmap"
-                paint={{
-                  'heatmap-weight': ['interpolate', ['linear'], ['get', 'weight'], 0, 0, 1, 1],
-                  'heatmap-intensity': ['interpolate', ['linear'], ['zoom'],
-                    0, 0.4 * timeIntensity, 6, 1.2 * timeIntensity, 12, 2.5 * timeIntensity, 15, 4 * timeIntensity],
-                  'heatmap-color': colors,
-                  'heatmap-radius': ['interpolate', ['linear'], ['zoom'],
-                    0, 18, 3, 32, 6, 45, 9, 60, 15, 80],
-                  'heatmap-opacity': ['interpolate', ['linear'], ['zoom'],
-                    1, 0.75 * globalOpacity, 14, 0.6 * globalOpacity],
-                } as any}
-              />
-            </Source>
-          </span>
+          <Source key={id} id={`heatmap-src-${id}`} type="geojson" data={geojson}>
+            <Layer
+              id={`heatmap-layer-${id}`}
+              type="heatmap"
+              paint={{
+                'heatmap-weight': ['interpolate', ['linear'], ['get', 'weight'], 0, 0, 1, 1],
+                'heatmap-intensity': [
+                  'interpolate', ['linear'], ['zoom'],
+                  0, 0.4 * timeFactor,
+                  6, 1.0 * timeFactor,
+                  12, 2.2 * timeFactor,
+                  15, 3.5 * timeFactor,
+                ],
+                'heatmap-color': colors,
+                'heatmap-radius': [
+                  'interpolate', ['linear'], ['zoom'],
+                  0, 20, 3, 35, 6, 50, 9, 65, 15, 85,
+                ],
+                'heatmap-opacity': isVisible
+                  ? globalOpacity * 0.85
+                  : 0,
+              } as any}
+            />
+          </Source>
         );
       })}
 
-      {/* Active address marker with pulsing glow */}
+      {/* Active searched address marker */}
       {riskData && (
         <Marker longitude={riskData.lng} latitude={riskData.lat} anchor="center">
-          <div
-            title={riskData.address}
-            className="marker-pulse"
-            style={{
-              width: 16, height: 16,
-              borderRadius: '50%',
-              background: '#00d4ff',
-              border: '2px solid white',
-              boxShadow: '0 0 14px 5px rgba(0,212,255,0.75)',
-              animation: 'pulse 2s ease-in-out infinite',
-            }}
-          />
+          <div className="active-marker" title={riskData.address} />
         </Marker>
       )}
 
-      {/* Heatmap layer controls */}
+      {/* Layer controls — positioned outside pointer-events-none containers */}
       <HeatmapControls
-        layers={activeLayers}
+        visibility={visibility}
         onToggle={toggleLayer}
         onSetAll={setAllLayers}
         opacity={globalOpacity}
         onOpacityChange={setGlobalOpacity}
       />
 
-      {/* Pulse animation */}
       <style>{`
-        @keyframes pulse {
-          0%, 100% { box-shadow: 0 0 14px 5px rgba(0,212,255,0.75); transform: scale(1); }
-          50% { box-shadow: 0 0 22px 10px rgba(0,212,255,0.45); transform: scale(1.15); }
+        .active-marker {
+          width: 14px; height: 14px;
+          border-radius: 50%;
+          background: #00d4ff;
+          border: 2px solid rgba(255,255,255,0.9);
+          box-shadow: 0 0 0 4px rgba(0,212,255,0.25), 0 0 16px 4px rgba(0,212,255,0.5);
+          animation: marker-glow 2.5s ease-in-out infinite;
         }
-        .marker-pulse { animation: pulse 2s ease-in-out infinite; }
+        @keyframes marker-glow {
+          0%, 100% { box-shadow: 0 0 0 4px rgba(0,212,255,0.25), 0 0 16px 4px rgba(0,212,255,0.5); transform: scale(1); }
+          50% { box-shadow: 0 0 0 8px rgba(0,212,255,0.12), 0 0 24px 8px rgba(0,212,255,0.3); transform: scale(1.1); }
+        }
       `}</style>
     </Map>
   );
