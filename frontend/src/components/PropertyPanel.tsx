@@ -47,7 +47,7 @@ export default function PropertyPanel({ data, year, onOverride }: {
   }
 
   return (
-    <div className="glass-panel p-5 flex flex-col gap-4">
+    <div className="glass-panel p-5 flex flex-col gap-4 shrink-0">
       {/* Header — building type + address */}
       <div className="flex items-start justify-between">
         <div>

@@ -17,16 +17,16 @@ const US_VIEW = {
 
 const ALL_LAYER_IDS = ['flood', 'fire', 'wind', 'heat', 'seismic', 'disasters'] as const;
 
-// Single red-yellow risk gradient
+// Red-yellow gradient — transparent at low density so ocean stays clean
 const RISK_COLORS = [
   'interpolate', ['linear'], ['heatmap-density'],
   0,    'rgba(0,0,0,0)',
-  0.12, 'rgba(255,220,0,0.0)',
-  0.25, 'rgba(255,200,0,0.50)',
-  0.45, 'rgba(255,110,0,0.68)',
-  0.65, 'rgba(220,30,0,0.82)',
-  0.85, 'rgba(170,0,0,0.92)',
-  1,    'rgb(110,0,0)',
+  0.08, 'rgba(0,0,0,0)',
+  0.20, 'rgba(255,210,0,0.35)',
+  0.38, 'rgba(255,130,0,0.58)',
+  0.58, 'rgba(215,30,0,0.76)',
+  0.80, 'rgba(160,0,0,0.90)',
+  1,    'rgb(100,0,0)',
 ];
 
 export default function MapView({ riskData, year }: { riskData: any; year: number }) {
@@ -108,18 +108,21 @@ export default function MapView({ riskData, year }: { riskData: any; year: numbe
             'heatmap-weight': ['interpolate', ['linear'], ['get', 'weight'], 0, 0, 1, 1],
             'heatmap-intensity': [
               'interpolate', ['linear'], ['zoom'],
-              0, 0.5 * timeFactor,
-              3, 0.9 * timeFactor,
-              6, 1.6 * timeFactor,
-              12, 3.0 * timeFactor,
-              15, 5.0 * timeFactor,
+              0, 1.2 * timeFactor,
+              3, 1.8 * timeFactor,
+              6, 2.8 * timeFactor,
+              12, 4.5 * timeFactor,
+              15, 7.0 * timeFactor,
             ],
             'heatmap-color': RISK_COLORS,
             'heatmap-radius': [
               'interpolate', ['linear'], ['zoom'],
-              0, 14, 3, 24, 6, 40, 9, 60, 14, 85,
+              0, 18, 3, 30, 6, 50, 9, 70, 14, 90,
             ],
-            'heatmap-opacity': 0.85,
+            'heatmap-opacity': [
+              'interpolate', ['linear'], ['zoom'],
+              2, 0.75, 8, 0.88, 14, 0.92,
+            ],
           } as any}
         />
       </Source>

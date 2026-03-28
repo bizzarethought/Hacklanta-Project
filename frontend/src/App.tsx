@@ -8,6 +8,7 @@ import InsuranceList from './components/InsuranceList';
 import LandingPage from './components/LandingPage';
 import LoadingTransition from './components/LoadingTransition';
 import DisasterSim from './components/DisasterSim';
+import ChatBot from './components/ChatBot';
 
 type AppPhase = 'landing' | 'loading' | 'app';
 
@@ -55,8 +56,6 @@ function App() {
   const [year, setYear] = useState(2024);
   const [overrides, setOverrides] = useState<Record<string, any>>({});
   const [simHazard, setSimHazard] = useState<string | null>(null);
-  const [leftOpen, setLeftOpen] = useState(true);
-  const [rightOpen, setRightOpen] = useState(true);
 
   const buildQueryParams = useCallback((address: string, extraOverrides?: Record<string, any>) => {
     const params: Record<string, string> = { address };
@@ -225,115 +224,86 @@ function App() {
       </div>
 
       {/* Main content panels */}
-      <div className="relative z-10 w-full h-full p-6 pt-24 pb-6 flex justify-between pointer-events-none gap-2">
+      <div className="relative z-10 w-full h-full p-6 pt-24 pb-6 flex justify-between pointer-events-none gap-4 min-h-0 overflow-hidden">
 
-        {/* Left column + toggle */}
-        <div className="flex items-start gap-1 pointer-events-auto h-full">
-          <div
-            className="flex flex-col gap-4 pb-10 scrollbar-thin transition-all duration-300"
-            style={{
-              width: leftOpen ? 400 : 0,
-              opacity: leftOpen ? 1 : 0,
-              overflowY: leftOpen ? 'auto' : 'hidden',
-              overflowX: 'hidden',
-              flexShrink: 0,
-            }}
-          >
-            {error && (
-              <div className="glass-panel p-4 flex items-center gap-3 border border-red-500/30">
-                <i className="fa-solid fa-circle-exclamation text-red-400 text-sm shrink-0" />
-                <p className="text-sm text-red-300">{error}</p>
-              </div>
-            )}
-            {!activeAddress ? (
-              <div className="glass-panel p-5 flex flex-col gap-3">
-                <p className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold flex items-center gap-1.5">
-                  <i className="fa-solid fa-map-pin text-climate-cyan text-[8px]" />
-                  Demo Properties — Miami-Dade
-                </p>
-                {DEMO_PROPERTIES.map(p => (
-                  <button
-                    key={p.address}
-                    onClick={() => selectDemo(p.address)}
-                    className="w-full text-left bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.06] hover:border-climate-cyan/30 rounded-lg px-4 py-3 transition-all group outline-none"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-white group-hover:text-climate-cyan transition-colors">{p.label}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">{p.sublabel}</p>
-                      </div>
-                      <i className="fa-solid fa-chevron-right text-[10px] text-climate-cyan opacity-0 group-hover:opacity-100 transition-opacity" />
+        {/* Left column */}
+        <div
+          className="flex flex-col gap-4 pb-10 scrollbar-thin pointer-events-auto min-h-0"
+          style={{ width: 400, height: '100%', overflowY: 'auto', overflowX: 'hidden', flexShrink: 0 }}
+        >
+          {error && (
+            <div className="glass-panel p-4 flex items-center gap-3 border border-red-500/30">
+              <i className="fa-solid fa-circle-exclamation text-red-400 text-sm shrink-0" />
+              <p className="text-sm text-red-300">{error}</p>
+            </div>
+          )}
+          {!activeAddress ? (
+            <div className="glass-panel p-5 flex flex-col gap-3">
+              <p className="text-[9px] text-gray-500 uppercase tracking-widest font-semibold flex items-center gap-1.5">
+                <i className="fa-solid fa-map-pin text-climate-cyan text-[8px]" />
+                Demo Properties — Miami-Dade
+              </p>
+              {DEMO_PROPERTIES.map(p => (
+                <button
+                  key={p.address}
+                  onClick={() => selectDemo(p.address)}
+                  className="w-full text-left bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.06] hover:border-climate-cyan/30 rounded-lg px-4 py-3 transition-all group outline-none"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-white group-hover:text-climate-cyan transition-colors">{p.label}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{p.sublabel}</p>
                     </div>
-                  </button>
-                ))}
-                <p className="text-[10px] text-gray-600 text-center pt-1">Or type any US address above</p>
-              </div>
-            ) : loading ? (
-              <>
-                <SkeletonPanel lines={5} />
-                <SkeletonPanel lines={4} />
-              </>
-            ) : riskData && trajectoryData ? (
-              <>
-                <PropertyPanel data={riskData} year={year} onOverride={handleOverride} />
-                <PremiumTrajectory data={trajectoryData} currentYear={year} />
-              </>
-            ) : null}
-          </div>
-          {/* Left toggle button */}
-          <button
-            onClick={() => setLeftOpen(o => !o)}
-            className="mt-2 glass-panel px-2 py-3 text-gray-400 hover:text-climate-cyan hover:border-climate-cyan/30 transition-all text-xs font-bold shrink-0"
-            title={leftOpen ? 'Collapse panel' : 'Expand panel'}
-          >
-            {leftOpen ? '‹' : '›'}
-          </button>
+                    <i className="fa-solid fa-chevron-right text-[10px] text-climate-cyan opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                </button>
+              ))}
+              <p className="text-[10px] text-gray-600 text-center pt-1">Or type any US address above</p>
+            </div>
+          ) : loading ? (
+            <>
+              <SkeletonPanel lines={5} />
+              <SkeletonPanel lines={4} />
+            </>
+          ) : riskData && trajectoryData ? (
+            <>
+              <PropertyPanel data={riskData} year={year} onOverride={handleOverride} />
+              <PremiumTrajectory data={trajectoryData} currentYear={year} />
+            </>
+          ) : null}
         </div>
 
-        {/* Right column + toggle */}
-        <div className="flex items-start gap-1 pointer-events-auto h-full">
-          {/* Right toggle button */}
-          <button
-            onClick={() => setRightOpen(o => !o)}
-            className="mt-2 glass-panel px-2 py-3 text-gray-400 hover:text-climate-cyan hover:border-climate-cyan/30 transition-all text-xs font-bold shrink-0"
-            title={rightOpen ? 'Collapse panel' : 'Expand panel'}
-          >
-            {rightOpen ? '›' : '‹'}
-          </button>
-          <div
-            className="flex flex-col gap-4 pb-10 scrollbar-thin transition-all duration-300"
-            style={{
-              width: rightOpen ? 480 : 0,
-              opacity: rightOpen ? 1 : 0,
-              overflowY: rightOpen ? 'auto' : 'hidden',
-              overflowX: 'hidden',
-              flexShrink: 0,
-            }}
-          >
-            {!activeAddress ? (
-              <div className="glass-panel p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[200px]">
-                <i className="fa-solid fa-wand-magic-sparkles text-3xl text-gray-600" />
-                <p className="text-sm text-gray-500 leading-relaxed">
-                  AI-powered mitigation recommendations<br/>and insurer matching will appear here
-                </p>
-              </div>
-            ) : loading ? (
-              <>
-                <SkeletonPanel lines={5} />
-                <SkeletonPanel lines={4} />
-              </>
-            ) : recommendations ? (
-              <>
-                <ActionableImprovements
-                  summary={recommendations.summary}
-                  improvements={recommendations.improvements}
-                />
-                <InsuranceList insurers={recommendations.insurers} />
-              </>
-            ) : null}
-          </div>
+        {/* Right column */}
+        <div
+          className="flex flex-col gap-4 pb-10 scrollbar-thin pointer-events-auto min-h-0"
+          style={{ width: 480, height: '100%', overflowY: 'auto', overflowX: 'hidden', flexShrink: 0 }}
+        >
+          {!activeAddress ? (
+            <div className="glass-panel p-8 flex flex-col items-center justify-center gap-4 text-center min-h-[200px]">
+              <i className="fa-solid fa-wand-magic-sparkles text-3xl text-gray-600" />
+              <p className="text-sm text-gray-500 leading-relaxed">
+                AI-powered mitigation recommendations<br/>and insurer matching will appear here
+              </p>
+            </div>
+          ) : loading ? (
+            <>
+              <SkeletonPanel lines={5} />
+              <SkeletonPanel lines={4} />
+            </>
+          ) : recommendations ? (
+            <>
+              <ActionableImprovements
+                summary={recommendations.summary}
+                improvements={recommendations.improvements}
+              />
+              <InsuranceList insurers={recommendations.insurers} />
+            </>
+          ) : null}
         </div>
       </div>
+
+      {/* Chatbot */}
+      <ChatBot propertyContext={riskData ?? undefined} />
 
       {/* Disaster Simulation Overlay */}
       {simHazard && (

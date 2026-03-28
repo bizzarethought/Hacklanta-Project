@@ -18,7 +18,7 @@ export default function PremiumTrajectory({ data, currentYear }: { data: any[], 
     : 0;
 
   return (
-    <div className="glass-panel p-5 flex flex-col gap-3" style={{ minHeight: 280 }}>
+    <div className="glass-panel p-5 flex flex-col gap-3 shrink-0" style={{ minHeight: 280 }}>
       <div className="flex justify-between items-start">
         <div>
           <h3 className="text-xs text-gray-400 uppercase tracking-widest">Long-Term Premium Trajectory</h3>
@@ -52,7 +52,7 @@ export default function PremiumTrajectory({ data, currentYear }: { data: any[], 
         </div>
       )}
 
-      <div className="flex-1 w-full -ml-4 mt-1" style={{ minHeight: 180 }}>
+      <div className="w-full -ml-4 mt-1" style={{ height: 180 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 10, right: 10, bottom: 0, left: 10 }}>
             <XAxis

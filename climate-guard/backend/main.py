@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.routers import risk, recommendations, trajectory, properties, heatmap
+from backend.routers import risk, recommendations, trajectory, properties, heatmap, chat
 
 app = FastAPI(title="Climate Guard API", version="2.0.0")
 
@@ -17,6 +17,7 @@ app.include_router(risk.router)
 app.include_router(recommendations.router)
 app.include_router(trajectory.router)
 app.include_router(heatmap.router)
+app.include_router(chat.router)
 
 @app.get("/health")
 async def health():
